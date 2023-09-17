@@ -1,0 +1,150 @@
+<!-- <!DOCTYPE html>
+<html>
+<head>
+  <title>Отображение PDF в браузере</title>
+</head>
+<body>
+  <h1>Первый PDF-файл:</h1>
+  <embed src="./pdfs/sample.pdf" width="100%" height="600px" type="application/pdf">
+
+  <h1>Второй PDF-файл:</h1>
+  <embed src="./pdfs/file-sample_150kB.pdf" width="100%" height="600px" type="application/pdf">
+
+  <h1>Объединенный PDF-файл:</h1>
+  <embed src="./pdfs/merged.pdf" width="100%" height="600px" type="application/pdf">
+</body>
+</html> -->
+
+<!-- 2 -->
+<!--<!DOCTYPE html>-->
+<!--<html>-->
+<!--<head>-->
+<!--  <title>Отображение PDF в браузере с помощью pdf.js</title>-->
+<!--  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>-->
+<!--</head>-->
+<!--<body>-->
+<!--  <h1>first PDF:</h1>-->
+<!--  <div id="pdfContainer1"></div>-->
+
+<!--  <h1>second PDF:</h1>-->
+<!--  <div id="pdfContainer2"></div>-->
+
+<!--  <h1>merged PDF:</h1>-->
+<!--  <div id="pdfContainerMerged"></div>-->
+<!--  <script>-->
+<!--    // Функция для отображения PDF-файла в указанном контейнере-->
+<!--    function renderPDF(url, containerId) {-->
+<!--      const container = document.getElementById(containerId);-->
+
+<!--      // Загрузка и отображение PDF-файла-->
+<!--      pdfjsLib.getDocument(url).promise.then((pdf) => {-->
+<!--        pdf.getPage(1).then((page) => {-->
+<!--          const scale = 1.5;-->
+<!--          const viewport = page.getViewport({ scale });-->
+
+<!--          const canvas = document.createElement('canvas');-->
+<!--          const context = canvas.getContext('2d');-->
+<!--          canvas.width = viewport.width;-->
+<!--          canvas.height = viewport.height;-->
+
+<!--          const renderContext = {-->
+<!--            canvasContext: context,-->
+<!--            viewport: viewport,-->
+<!--          };-->
+
+<!--          container.appendChild(canvas);-->
+
+<!--          page.render(renderContext);-->
+<!--        });-->
+<!--      });-->
+<!--    }-->
+<!--    // Отображение первого PDF-файла-->
+<!--    renderPDF('./pdfs/sample.pdf', 'pdfContainer1');-->
+
+<!--    // Отображение второго PDF-файла-->
+<!--    renderPDF('./pdfs/file-sample_150kB.pdf', 'pdfContainer2');-->
+<!--  </script>-->
+<!--</body>-->
+<!--</html>-->
+
+<!--</body>-->
+<!--</html>-->
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Отображение и объединение PDF-файлов</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.14.0/pdf-lib.js"></script>
+</head>
+<body>
+<h1>First PDF:</h1>
+<div id="pdfContainer1"></div>
+
+<h1>Second PDF:</h1>
+<div id="pdfContainer2"></div>
+
+<h1>Merged PDF:</h1>
+<div id="pdfContainerMerged"></div>
+
+<script>
+
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js';
+
+    function renderPDF(url, containerId) {
+        const container = document.getElementById(containerId);
+
+        pdfjsLib.getDocument(url).promise.then((pdf) => {
+            pdf.getPage(1).then((page) => {
+                const scale = 1.5;
+                const viewport = page.getViewport({scale});
+
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+
+                const renderContext = {
+                    canvasContext: context,
+                    viewport: viewport,
+                };
+
+                container.appendChild(canvas);
+
+                page.render(renderContext);
+            });
+        });
+    }
+
+    async function mergePDFs(pdfUrls) {
+        const mergedContainer = document.getElementById('pdfContainerMerged');
+        const mergedPdf = await PDFLib.PDFDocument.create();
+
+
+        for (const url of pdfUrls) {
+            const pdfBytes = await fetch(url).then((response) => response.arrayBuffer());
+            const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+
+            const copiedPages = await mergedPdf.copyPages(pdfDoc, pdfDoc.getPageIndices());
+            copiedPages.forEach((page) => mergedPdf.addPage(page));
+        }
+
+        const mergedPdfBytes = await mergedPdf.save();
+        const mergedPdfDataUri = 'data:application/pdf;base64,' + btoa(new Uint8Array(mergedPdfBytes).reduce((data, byte) => data + String.fromCharCode(byte), ''));
+
+        const iframe = document.createElement('iframe');
+        iframe.src = mergedPdfDataUri;
+        iframe.width = '100%';
+        iframe.height = '600px';
+        mergedContainer.appendChild(iframe);
+    }
+
+    renderPDF('./pdfs/sample.pdf', 'pdfContainer1');
+
+    renderPDF('./pdfs/file-sample_150kB.pdf', 'pdfContainer2');
+
+    mergePDFs(['./pdfs/sample.pdf', './pdfs/file-sample_150kB.pdf']);
+</script>
+</body>
+</html>
